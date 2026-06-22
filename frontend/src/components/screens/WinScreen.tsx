@@ -6,7 +6,7 @@ import { useGoodDollar } from "../../contexts/GoodDollarContext";
 import { useScreen } from "../../contexts/ScreenContext";
 
 export function WinScreen() {
-  const { lastScore, startGame } = useGame();
+  const { lastScore, level, levelUp, currentLevel, startGame } = useGame();
   const { gameConfig, refreshStats } = useWallet();
   const { identityStatus, claimStatus } = useGoodDollar();
   const { showScreen } = useScreen();
@@ -14,10 +14,14 @@ export function WinScreen() {
   return (
     <div className="screen active">
       <div className="result-card">
-        <div className="result-hero">🏆</div>
-        <h1>You Won!</h1>
+        <div className="result-hero">{levelUp ? "🎉" : "🏆"}</div>
+        <h1>{levelUp ? "Level Up!" : "You Won!"}</h1>
         <div className="result-score">{lastScore} / {gameConfig.totalQuestions}</div>
-        <p>Great job! You passed the quiz.</p>
+        {levelUp ? (
+          <p>You completed Level {level} and unlocked <strong>Level {currentLevel}</strong>!</p>
+        ) : (
+          <p>Great job! You passed Level {level}.</p>
+        )}
 
         {identityStatus.status === "verified" && (
           <div className="claim-section">
@@ -39,7 +43,14 @@ export function WinScreen() {
         )}
 
         <div className="result-btns">
-          <Button variant="primary" onClick={startGame}>🎯 Play Again</Button>
+          {levelUp && currentLevel <= 10 && (
+            <Button variant="primary" onClick={() => startGame(currentLevel)}>
+              🚀 Play Level {currentLevel}
+            </Button>
+          )}
+          <Button variant={levelUp ? "secondary" : "primary"} onClick={() => startGame(level)}>
+            🔄 Replay Level {level}
+          </Button>
           <Button variant="secondary" onClick={() => { refreshStats(); showScreen("menu"); }}>
             Main Menu
           </Button>

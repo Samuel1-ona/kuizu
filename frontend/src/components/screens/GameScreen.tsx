@@ -6,7 +6,7 @@ import { useWallet } from "../../contexts/WalletContext";
 const LETTERS = ["A", "B", "C", "D"];
 
 export function GameScreen() {
-  const { questions, questionIndex, score, answerLocked, correctAnswer, chosenAnswer, pickAnswer, timeUp, nextQuestion } = useGame();
+  const { questions, questionIndex, score, answerLocked, correctAnswer, chosenAnswer, level, pickAnswer, timeUp, nextQuestion } = useGame();
   const { gameConfig } = useWallet();
   const timerActive = !answerLocked && questions.length > 0;
   const { timeLeft, pct, color } = useTimer(timerActive, timeUp);
@@ -30,7 +30,7 @@ export function GameScreen() {
           <div className="progress-fill" style={{ width: `${(questionIndex / gameConfig.totalQuestions) * 100}%` }} />
         </div>
         <div className="game-meta">
-          <span>Q {questionIndex + 1} / {gameConfig.totalQuestions}</span>
+          <span>Lv.{level} — Q {questionIndex + 1} / {gameConfig.totalQuestions}</span>
           <span className="category-tag">{q.category}</span>
           <span className="game-score-live">Score: {score}</span>
         </div>

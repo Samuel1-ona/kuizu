@@ -2,6 +2,7 @@ export type ScreenId =
   | "loading"
   | "connect"
   | "menu"
+  | "levelselect"
   | "game"
   | "win"
   | "lose"
@@ -17,6 +18,7 @@ export interface Question {
 
 export interface LocalQuestion extends Question {
   answer: number;
+  difficulty: number;
 }
 
 export interface StartGameResponse {
@@ -24,6 +26,7 @@ export interface StartGameResponse {
   questions: Question[];
   total: number;
   timePerQuestion: number;
+  level: number;
 }
 
 export interface AnswerResponse {
@@ -38,6 +41,14 @@ export interface EndGameResponse {
   total: number;
   passed: boolean;
   passingScore: number;
+  level: number;
+  levelUp: boolean;
+  currentLevel: number;
+}
+
+export interface ProgressResponse {
+  currentLevel: number;
+  wallet: string;
 }
 
 export type IdentityStatusValue = "verified" | "unverified" | "expired" | "unknown" | "checking";

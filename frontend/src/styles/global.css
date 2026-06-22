@@ -639,6 +639,76 @@ p  { font-size: 15px; line-height: 1.6; color: var(--muted); }
   margin-top: 6px;
 }
 
+/* ── Level select ──────────────────────────────────────────────────────────── */
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: var(--max-w);
+}
+.level-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 20px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  color: var(--white);
+  font-family: inherit;
+}
+.level-card.unlocked:hover {
+  border-color: var(--purple-light);
+  background: rgba(123, 47, 190, 0.18);
+}
+.level-card.unlocked:active {
+  transform: scale(0.97);
+}
+.level-card.locked {
+  opacity: 0.4;
+  cursor: default;
+}
+.level-card.completed {
+  border-color: rgba(6, 214, 160, 0.3);
+}
+.level-card.current {
+  border-color: var(--purple-light);
+  background: rgba(123, 47, 190, 0.12);
+}
+.level-num {
+  font-size: 28px;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--purple-light), var(--teal));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.level-card.locked .level-num {
+  background: none;
+  -webkit-text-fill-color: var(--muted);
+  font-size: 22px;
+}
+.level-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.level-check {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 14px;
+  color: var(--green);
+  font-weight: 700;
+}
+
 /* ── GoodDollar claim-button override ──────────────────────────────────────── */
 claim-button {
   --gd-primary: var(--purple);

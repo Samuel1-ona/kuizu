@@ -9,10 +9,17 @@ const supabase = createClient(
 
 const questions = JSON.parse(readFileSync(new URL("./questions.json", import.meta.url), "utf-8"));
 
+const forceReseed = process.argv.includes("--force");
+
+if (forceReseed) {
+  console.log("Force reseeding — clearing existing questions…");
+  await supabase.from("questions").delete().gte("id", 0);
+}
+
 const { count } = await supabase.from("questions").select("*", { count: "exact", head: true });
 
-if (count > 0) {
-  console.log(`questions table already has ${count} rows — skipping seed.`);
+if (count > 0 && !forceReseed) {
+  console.log(`questions table already has ${count} rows — run with --force to reseed.`);
   process.exit(0);
 }
 
@@ -24,4 +31,10 @@ if (error) {
   process.exit(1);
 }
 
+const byDifficulty = {};
+data.forEach(q => {
+  byDifficulty[q.difficulty] = (byDifficulty[q.difficulty] || 0) + 1;
+});
+
 console.log(`Seeded ${data.length} questions into Supabase.`);
+console.log("By difficulty:", byDifficulty);

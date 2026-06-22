@@ -117,7 +117,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, [isConnected, walletClient, wagmiAddress, initialized, showLoading, showScreen]);
 
   const connect = useCallback(async () => {
-    await web3AuthConnect();
+    try {
+      await web3AuthConnect();
+    } catch (err) {
+      console.error("Web3Auth connect failed:", err);
+    }
   }, [web3AuthConnect]);
 
   const submitUsernameAction = useCallback(async (name: string) => {

@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
-import { apiStartGame, apiSubmitAnswer, apiEndGame } from "../services/api";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { apiStartGame, apiSubmitAnswer, apiEndGame, apiGetProgress } from "../services/api";
 import { QUESTIONS } from "../constants/questions";
 import { useWallet } from "./WalletContext";
 import { useScreen } from "./ScreenContext";
@@ -24,16 +24,20 @@ interface GameContextValue {
   chosenAnswer: number | null;
   lastScore: number;
   lastWon: boolean;
-  startGame: () => Promise<void>;
+  level: number;
+  currentLevel: number;
+  levelUp: boolean;
+  startGame: (level: number) => Promise<void>;
   pickAnswer: (chosen: number) => Promise<void>;
   timeUp: () => Promise<void>;
   nextQuestion: () => void;
+  loadProgress: () => Promise<void>;
 }
 
 const GameContext = createContext<GameContextValue>(null!);
 
 export function GameProvider({ children }: { children: ReactNode }) {
-  const { contract, contractDeployed, gameConfig, refreshStats } = useWallet();
+  const { contract, contractDeployed, gameConfig, refreshStats, address } = useWallet();
   const { showScreen, showLoading } = useScreen();
 
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -45,8 +49,25 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [chosenAnswer, setChosenAnswer] = useState<number | null>(null);
   const [lastScore, setLastScore] = useState(0);
   const [lastWon, setLastWon] = useState(false);
+  const [level, setLevel] = useState(1);
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const [levelUp, setLevelUp] = useState(false);
 
-  const startGame = useCallback(async () => {
+  const loadProgress = useCallback(async () => {
+    if (!address) return;
+    try {
+      const data = await apiGetProgress(address);
+      setCurrentLevel(data.currentLevel);
+    } catch {
+      setCurrentLevel(1);
+    }
+  }, [address]);
+
+  useEffect(() => {
+    if (address) loadProgress();
+  }, [address, loadProgress]);
+
+  const startGame = useCallback(async (selectedLevel: number) => {
     showLoading("Starting game…");
 
     if (contractDeployed && contract) {
@@ -58,7 +79,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       } catch (err: unknown) {
         const code = (err as { code?: number | string })?.code;
         if (code === 4001 || code === "ACTION_REJECTED") {
-          showScreen("menu");
+          showScreen("levelselect");
           return;
         }
         console.warn("startGame tx failed:", (err as Error).message);
@@ -70,12 +91,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     try {
       showLoading("Loading questions…");
-      const data = await apiStartGame();
+      const data = await apiStartGame(selectedLevel, address || undefined);
       newSessionId = data.sessionId;
       newQuestions = data.questions;
     } catch (err) {
       console.warn("API unavailable, using local questions:", (err as Error).message);
-      newQuestions = shuffle(QUESTIONS).slice(0, gameConfig.totalQuestions);
+      const filtered = QUESTIONS.filter(q => q.difficulty === selectedLevel);
+      newQuestions = shuffle(filtered.length >= 10 ? filtered : QUESTIONS).slice(0, gameConfig.totalQuestions);
     }
 
     setSessionId(newSessionId);
@@ -85,10 +107,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setAnswerLocked(false);
     setCorrectAnswer(null);
     setChosenAnswer(null);
+    setLevel(selectedLevel);
+    setLevelUp(false);
     showScreen("game");
-  }, [contract, contractDeployed, gameConfig.totalQuestions, showLoading, showScreen]);
+  }, [contract, contractDeployed, gameConfig.totalQuestions, address, showLoading, showScreen]);
 
-  const submitScore = useCallback(async (finalScore: number, passed: boolean) => {
+  const submitScore = useCallback(async (finalScore: number, passed: boolean, didLevelUp: boolean, newCurrentLevel: number) => {
     showLoading("Submitting score…");
 
     if (contractDeployed && contract) {
@@ -108,6 +132,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     setLastScore(finalScore);
     setLastWon(passed);
+    setLevelUp(didLevelUp);
+    if (didLevelUp) setCurrentLevel(newCurrentLevel);
     showScreen(passed ? "win" : "lose");
   }, [contract, contractDeployed, refreshStats, showLoading, showScreen]);
 
@@ -153,21 +179,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const nextQuestion = useCallback(() => {
     const nextIdx = questionIndex + 1;
     if (nextIdx >= gameConfig.totalQuestions) {
-      let finalScore = score;
-      let passed = score >= gameConfig.passingScore;
-
       if (sessionId) {
-        apiEndGame(sessionId).then(data => {
-          finalScore = data.score;
-          passed = data.passed;
+        apiEndGame(sessionId, address || undefined).then(data => {
           setSessionId(null);
-          submitScore(finalScore, passed);
+          submitScore(data.score, data.passed, data.levelUp, data.currentLevel);
         }).catch(() => {
           setSessionId(null);
-          submitScore(finalScore, passed);
+          submitScore(score, score >= gameConfig.passingScore, false, currentLevel);
         });
       } else {
-        submitScore(finalScore, passed);
+        submitScore(score, score >= gameConfig.passingScore, false, currentLevel);
       }
       return;
     }
@@ -176,14 +197,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setAnswerLocked(false);
     setCorrectAnswer(null);
     setChosenAnswer(null);
-  }, [questionIndex, gameConfig, score, sessionId, submitScore]);
+  }, [questionIndex, gameConfig, score, sessionId, address, currentLevel, submitScore]);
 
   return (
     <GameContext.Provider value={{
       sessionId, questions, questionIndex, score,
       answerLocked, correctAnswer, chosenAnswer,
-      lastScore, lastWon,
-      startGame, pickAnswer, timeUp, nextQuestion,
+      lastScore, lastWon, level, currentLevel, levelUp,
+      startGame, pickAnswer, timeUp, nextQuestion, loadProgress,
     }}>
       {children}
     </GameContext.Provider>

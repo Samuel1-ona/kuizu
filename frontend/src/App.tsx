@@ -16,6 +16,7 @@ import { LoseScreen } from "./components/screens/LoseScreen";
 import { LeaderboardScreen } from "./components/screens/LeaderboardScreen";
 import { UsernameScreen } from "./components/screens/UsernameScreen";
 import { ErrorScreen } from "./components/screens/ErrorScreen";
+import { LevelSelectScreen } from "./components/screens/LevelSelectScreen";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ function ScreenRouter() {
     case "loading":     return <LoadingScreen />;
     case "connect":     return <ConnectScreen />;
     case "menu":        return <MenuScreen />;
+    case "levelselect": return <LevelSelectScreen />;
     case "game":        return <GameScreen />;
     case "win":         return <WinScreen />;
     case "lose":        return <LoseScreen />;

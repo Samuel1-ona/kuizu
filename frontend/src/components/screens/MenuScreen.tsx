@@ -10,7 +10,7 @@ import { useScreen } from "../../contexts/ScreenContext";
 export function MenuScreen() {
   const { shortAddress, gameConfig, stats, username } = useWallet();
   const { identityStatus, generateFVLink } = useGoodDollar();
-  const { startGame } = useGame();
+  const { currentLevel } = useGame();
   const { showScreen } = useScreen();
 
   const handleVerify = async () => {
@@ -42,7 +42,9 @@ export function MenuScreen() {
       <StatsRow stats={stats} totalQuestions={gameConfig.totalQuestions} />
 
       <div className="menu-btns">
-        <Button variant="primary" onClick={startGame}>🎯 Play Quiz</Button>
+        <Button variant="primary" onClick={() => showScreen("levelselect")}>
+          🎯 Play Quiz — Level {currentLevel}
+        </Button>
         <Button variant="secondary" onClick={() => showScreen("leaderboard")}>🏆 Leaderboard</Button>
         {identityStatus.status !== "verified" && (
           <Button variant="teal" onClick={handleVerify}>
