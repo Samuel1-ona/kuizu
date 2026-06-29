@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { generateQuestions } from "../lib/deepseek.js";
 
 function shuffle(arr) {
   const a = [...arr];
@@ -9,7 +10,7 @@ function shuffle(arr) {
   return a;
 }
 
-export default function gameRouter(supabase, config) {
+export default function gameRouter(supabase, config, cleanupHints = () => {}) {
   const router = Router();
 
   // GET /api/game/progress/:wallet — get player's current level
@@ -57,15 +58,20 @@ export default function gameRouter(supabase, config) {
       .select("q, options, answer, category")
       .eq("difficulty", difficulty);
 
-    if (qErr || !allQuestions?.length) {
-      return res.status(404).json({ error: `No questions available for difficulty ${difficulty}` });
-    }
+    let picked;
 
-    if (allQuestions.length < config.questionsPerGame) {
-      return res.status(404).json({ error: `Not enough questions for difficulty ${difficulty} (need ${config.questionsPerGame}, have ${allQuestions.length})` });
+    if (!qErr && allQuestions?.length >= config.questionsPerGame) {
+      picked = shuffle(allQuestions).slice(0, config.questionsPerGame);
+    } else {
+      // Fall back to AI-generated questions when DB doesn't have enough
+      try {
+        const aiQuestions = await generateQuestions(levelNum, config.questionsPerGame);
+        picked = aiQuestions;
+      } catch (aiErr) {
+        console.error("DeepSeek question generation failed:", aiErr);
+        return res.status(404).json({ error: `No questions available for difficulty ${difficulty}` });
+      }
     }
-
-    const picked = shuffle(allQuestions).slice(0, config.questionsPerGame);
 
     const { data: session, error: sErr } = await supabase
       .from("game_sessions")
@@ -191,6 +197,8 @@ export default function gameRouter(supabase, config) {
       .from("game_sessions")
       .delete()
       .eq("id", sessionId);
+
+    cleanupHints(sessionId);
 
     res.json({
       score,

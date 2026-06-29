@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { createClient } from "@supabase/supabase-js";
 import gameRouter from "./routes/game.js";
+import aiRouter from "./routes/ai.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -16,12 +17,15 @@ const supabase = createClient(
 app.use(cors({ origin: process.env.CORS_ORIGIN || "*" }));
 app.use(express.json());
 
+const ai = aiRouter(supabase);
+app.use("/api/ai", ai);
+
 app.use("/api/game", gameRouter(supabase, {
   questionsPerGame: Number(process.env.QUESTIONS_PER_GAME) || 10,
   passingScore:     Number(process.env.PASSING_SCORE) || 7,
   timePerQuestion:  Number(process.env.TIME_PER_QUESTION) || 20,
   sessionTtl:       SESSION_TTL,
-}));
+}, ai.cleanupSession));
 
 // Clean up expired sessions every 60s
 setInterval(async () => {

@@ -17,6 +17,7 @@ export const web3AuthConfig: Web3AuthContextConfig = {
         decimals: 18,
         rpcTarget: import.meta.env.VITE_RPC_URL || "https://forno.celo.org",
         blockExplorerUrl: "https://celoscan.io",
+        logo: "https://cryptologos.cc/logos/celo-celo-logo.png",
       },
     ],
     defaultChainId: "0xa4ec",
@@ -24,7 +25,6 @@ export const web3AuthConfig: Web3AuthContextConfig = {
       appName: "Kuizu",
       defaultLanguage: "en",
       mode: "dark",
-      primaryColor: "#7b2fbe",
     },
   },
 };

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import { apiStartGame, apiSubmitAnswer, apiEndGame, apiGetProgress } from "../services/api";
+import { apiGetHint, apiGetExplanation } from "../services/aiApi";
 import { QUESTIONS } from "../constants/questions";
 import { useWallet } from "./WalletContext";
 import { useScreen } from "./ScreenContext";
@@ -27,6 +28,16 @@ interface GameContextValue {
   level: number;
   currentLevel: number;
   levelUp: boolean;
+  // AI features
+  hint: string | null;
+  hintLoading: boolean;
+  hintsRemaining: number;
+  explanation: string | null;
+  explanationLoading: boolean;
+  showingExplanation: boolean;
+  fetchHint: () => Promise<void>;
+  fetchExplanation: () => Promise<void>;
+  closeExplanation: () => void;
   startGame: (level: number) => Promise<void>;
   pickAnswer: (chosen: number) => Promise<void>;
   timeUp: () => Promise<void>;
@@ -52,6 +63,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [level, setLevel] = useState(1);
   const [currentLevel, setCurrentLevel] = useState(1);
   const [levelUp, setLevelUp] = useState(false);
+
+  // AI state
+  const [hint, setHint] = useState<string | null>(null);
+  const [hintLoading, setHintLoading] = useState(false);
+  const [hintsRemaining, setHintsRemaining] = useState(2);
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [explanationLoading, setExplanationLoading] = useState(false);
+  const [showingExplanation, setShowingExplanation] = useState(false);
 
   const loadProgress = useCallback(async () => {
     if (!address) return;
@@ -109,6 +128,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setChosenAnswer(null);
     setLevel(selectedLevel);
     setLevelUp(false);
+    setHint(null);
+    setHintLoading(false);
+    setHintsRemaining(2);
+    setExplanation(null);
+    setExplanationLoading(false);
+    setShowingExplanation(false);
     showScreen("game");
   }, [contract, contractDeployed, gameConfig.totalQuestions, address, showLoading, showScreen]);
 
@@ -176,8 +201,45 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   }, [answerLocked, sessionId, questions, questionIndex]);
 
+  const fetchHint = useCallback(async () => {
+    if (!sessionId || hintLoading || hintsRemaining <= 0 || answerLocked) return;
+    setHintLoading(true);
+    try {
+      const data = await apiGetHint(sessionId, questionIndex);
+      setHint(data.hint);
+      setHintsRemaining(data.hintsRemaining);
+    } catch (err) {
+      console.error("Failed to get hint:", err);
+    } finally {
+      setHintLoading(false);
+    }
+  }, [sessionId, questionIndex, hintLoading, hintsRemaining, answerLocked]);
+
+  const fetchExplanation = useCallback(async () => {
+    if (explanationLoading || correctAnswer === null) return;
+    setShowingExplanation(true);
+    setExplanationLoading(true);
+    try {
+      const q = questions[questionIndex];
+      const data = await apiGetExplanation(q.q, q.options, correctAnswer);
+      setExplanation(data.explanation);
+    } catch (err) {
+      console.error("Failed to get explanation:", err);
+      setExplanation("Explanation unavailable right now.");
+    } finally {
+      setExplanationLoading(false);
+    }
+  }, [explanationLoading, correctAnswer, questions, questionIndex]);
+
+  const closeExplanation = useCallback(() => {
+    setShowingExplanation(false);
+  }, []);
+
   const nextQuestion = useCallback(() => {
     const nextIdx = questionIndex + 1;
+    setHint(null);
+    setExplanation(null);
+    setShowingExplanation(false);
     if (nextIdx >= gameConfig.totalQuestions) {
       if (sessionId) {
         apiEndGame(sessionId, address || undefined).then(data => {
@@ -204,6 +266,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       sessionId, questions, questionIndex, score,
       answerLocked, correctAnswer, chosenAnswer,
       lastScore, lastWon, level, currentLevel, levelUp,
+      hint, hintLoading, hintsRemaining,
+      explanation, explanationLoading, showingExplanation,
+      fetchHint, fetchExplanation, closeExplanation,
       startGame, pickAnswer, timeUp, nextQuestion, loadProgress,
     }}>
       {children}

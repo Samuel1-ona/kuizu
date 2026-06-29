@@ -18,7 +18,7 @@ export interface Question {
 
 export interface LocalQuestion extends Question {
   answer: number;
-  difficulty: number;
+  difficulty?: number;
 }
 
 export interface StartGameResponse {

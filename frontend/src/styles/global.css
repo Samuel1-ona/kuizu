@@ -714,3 +714,123 @@ claim-button {
   --gd-primary: var(--purple);
   display: block;
 }
+
+/* ── AI features ────────────────────────────────────────────────────────────── */
+.hint-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  max-width: var(--max-w);
+  margin: 8px 0;
+  padding: 12px 14px;
+  background: rgba(255, 183, 3, 0.1);
+  border: 1px solid rgba(255, 183, 3, 0.3);
+  border-radius: var(--radius);
+  animation: fadeIn 0.25s ease;
+}
+.hint-icon { font-size: 16px; flex-shrink: 0; }
+.hint-text  { font-size: 14px; color: var(--yellow); line-height: 1.5; }
+
+.ai-action-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: var(--max-w);
+  margin-top: 10px;
+}
+
+.ai-btn {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.ai-btn:active { transform: scale(0.97); }
+.ai-btn:disabled { opacity: 0.4; cursor: default; }
+
+.hint-btn {
+  background: rgba(255, 183, 3, 0.12);
+  color: var(--yellow);
+  border-color: rgba(255, 183, 3, 0.3);
+}
+.hint-btn:hover:not(:disabled) { background: rgba(255, 183, 3, 0.2); }
+
+.why-btn {
+  background: rgba(0, 180, 216, 0.12);
+  color: var(--teal);
+  border-color: rgba(0, 180, 216, 0.3);
+}
+.why-btn:hover:not(:disabled) { background: rgba(0, 180, 216, 0.2); }
+
+/* Explanation modal */
+.explanation-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.2s ease;
+  padding: 0 0 env(safe-area-inset-bottom, 0);
+}
+.explanation-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 20px 20px 32px;
+  width: 100%;
+  max-width: var(--max-w);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: slideUp 0.25s ease;
+}
+.explanation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.explanation-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+.explanation-answer {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--green);
+}
+.explanation-body {
+  font-size: 14px;
+  line-height: 1.65;
+  color: rgba(255,255,255,0.85);
+}
+.explanation-loading {
+  font-size: 14px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
